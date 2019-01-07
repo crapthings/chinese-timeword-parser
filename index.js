@@ -21,10 +21,10 @@ function parse(str) {
   const directionality = TIMEWORD[match[1]] || TIMEWORD[match[7]]
 
   if (token === 'start of a year')
-    value = moment(new Date(value)).startOf().format('YYYY-M-D')
+    value = moment(new Date(value)).startOf('year').format('YYYY-M-D')
 
   if (token === 'end of a year')
-    value = moment(new Date(value)).endOf().format('YYYY-M-D')
+    value = moment(new Date(value)).endOf('year').format('YYYY-M-D')
 
   return {
     directionality,
