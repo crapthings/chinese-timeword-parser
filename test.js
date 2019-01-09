@@ -2,7 +2,7 @@ const test = require('ava')
 
 const {
   parse,
-  parseWith,
+  compare,
 } = require('./')
 
 test('十日内', ({ pass, fail, is }) => {
@@ -102,11 +102,75 @@ test('一个星期内', ({ pass, fail, is }) => {
 })
 
 test('三到五天内', ({ pass, fail, is }) => {
-  const { directionality, value, token } = parse('三到五天内')
-  console.log(directionality, value, token)
-  // is(directionality, 'between')
-  // is(value, '1')
-  // is(token, 'weeks')
+  const { directionality, from, to, token } = parse('三到五天内')
+  is(directionality, 'between')
+  is(from, '3')
+  is(to, '5')
+  is(token, 'days')
+})
+
+test('5 ~ 7天内', ({ pass, fail, is }) => {
+  const { directionality, from, to, token } = parse('5 ~ 7天内')
+  is(directionality, 'between')
+  is(from, '5')
+  is(to, '7')
+  is(token, 'days')
+})
+
+test('需要在一个季度内完成', ({ pass, fail, is }) => {
+  const { directionality, value, token } = parse('需要在一个季度内完成')
+  is(directionality, 'between')
+  is(value, '1')
+  is(token, 'quarters')
+})
+
+test('2018年第一季度', ({ pass, fail, is }) => {
+  const { from, to, quarter, token } = parse('2018年第一季度')
+  is(from, '2018-1-1')
+  is(to, '2018-3-31')
+  is(quarter, '1')
+  is(token, 'quarters')
+})
+
+test('2018年第二季度', ({ pass, fail, is }) => {
+  const { from, to, quarter, token } = parse('2018年第二季度')
+  is(from, '2018-4-1')
+  is(to, '2018-6-30')
+  is(quarter, '2')
+  is(token, 'quarters')
+})
+
+test('2018年第二季度前', ({ pass, fail, is }) => {
+  const { directionality, value, year, quarter, token } = parse('2018年第二季度前')
+  is(directionality, 'before')
+  is(value, '2018-3-31')
+  is(year, '2018')
+  is(quarter, '2')
+  is(token, 'quarters')
+})
+
+test('2018年第二季度前 2017年第3季度后', ({ pass, fail, is }) => {
+  const dateA = parse('2018年第二季度前')
+  const dateB = parse('2017年第3季度后')
+  is(dateA.directionality, 'before')
+  is(dateA.value, '2018-3-31')
+
+  is(dateB.directionality, 'after')
+  is(dateB.value, '2017-10-1')
+
+  is(compare('2018年第二季度前', '2017年第3季度后'), false)
+})
+
+test('二零一八年第二季度前 2020年第3季度后', ({ pass, fail, is }) => {
+  const dateA = parse('二零一八年第二季度前')
+  const dateB = parse('2020年第3季度后')
+  is(dateA.directionality, 'before')
+  is(dateA.value, '2018-3-31')
+
+  is(dateB.directionality, 'after')
+  is(dateB.value, '2020-10-1')
+
+  is(compare('二零一八年第二季度前', '2020年第3季度后'), true)
 })
 
 function log(ctx) {

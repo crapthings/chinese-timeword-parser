@@ -44,6 +44,7 @@ const TIMEWORD = {
   '头': 'before',
   '内': 'between',
   '星期': 'weeks',
+  '季度': 'quarters',
   '年初': 'start of a year',
   '年底': 'end of a year',
   '年末': 'end of a year',
