@@ -7,17 +7,12 @@ const {
   TIMEWORD,
 } = require('./mapping')
 
-const MATCH_PATTERN1 = /([头前后])?([\d]+)([年])?([的])?([第])?([到至~])?([\d]+)?([个])?(.*)?([年月周][初末底头尾]|季度|星期|[年月日天周])([之])?([前后内])?/
-
-// 2018年第一季度
-const MATCH_PATTERN2 = /([\d]+)([年])([的])?([第])?([\d]+)([个])?([月周天]|季度)([前后内])?/
+const MATCH_PATTERN = /([头前后])?([\d]+)([年])?([的])?([第])?([到至~])?([\d]+)?([个])?(.*)?([年月周][初末底头尾]|季度|星期|[年月日天周])([之])?([前后内])?/
 
 function parse(str) {
   const pre = preProcess(str)
   const post = postProcess(pre)
-  const match = post.match(MATCH_PATTERN1)
-
-  // console.log(JSON.stringify(match, null, 2), '\n')
+  const match = post.match(MATCH_PATTERN)
 
   let value = match[2]
   const token = TIMEWORD[match[10]]
@@ -105,6 +100,12 @@ function isAfter(dateA, dateB) {
   return moment(new Date(a.value)).isAfter(new Date(b.value))
 }
 
+function isSame(dateA, dateB) {
+  const a = parse(dateA)
+  const b = parse(dateB)
+  return moment(new Date(a.value)).isSame(new Date(b.value))
+}
+
 function isFunction(fn) {
  return fn && {}.toString.call(fn) === '[object Function]'
 }
@@ -113,5 +114,6 @@ module.exports = {
   parse,
   isBefore,
   isAfter,
+  isSame,
   compare: isBefore,
 }
