@@ -14,7 +14,8 @@ function parse(str) {
   const post = postProcess(pre)
   const match = post.match(MATCH_PATTERN)
 
-  // log(match)
+  if (str === '三到五天内')
+    console.log(JSON.stringify(match,null,2))
 
   let value = match[2]
   const token = TIMEWORD[match[5]]
@@ -65,10 +66,6 @@ function postProcess(ctx) {
 
 function isFunction(fn) {
  return fn && {}.toString.call(fn) === '[object Function]'
-}
-
-function log(ctx) {
-  console.log(JSON.stringify(ctx, null, 2), '\n')
 }
 
 module.exports = {

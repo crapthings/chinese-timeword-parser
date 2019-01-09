@@ -101,6 +101,14 @@ test('一个星期内', ({ pass, fail, is }) => {
   is(token, 'weeks')
 })
 
+test('三到五天内', ({ pass, fail, is }) => {
+  const { directionality, value, token } = parse('三到五天内')
+  console.log(directionality, value, token)
+  // is(directionality, 'between')
+  // is(value, '1')
+  // is(token, 'weeks')
+})
+
 function log(ctx) {
   console.log(JSON.stringify(ctx, null, 2), '\n')
 }
