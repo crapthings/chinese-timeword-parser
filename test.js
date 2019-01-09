@@ -2,6 +2,9 @@ const test = require('ava')
 
 const {
   parse,
+  isBefore,
+  isAfter,
+  isSame,
   compare,
 } = require('./')
 
@@ -158,7 +161,7 @@ test('2018年第二季度前 2017年第3季度后', ({ pass, fail, is }) => {
   is(dateB.directionality, 'after')
   is(dateB.value, '2017-10-1')
 
-  is(compare('2018年第二季度前', '2017年第3季度后'), false)
+  is(compare('2018年第二季度前', '2017年第3季度后'), 1)
 })
 
 test('二零一八年第二季度前 2020年第3季度后', ({ pass, fail, is }) => {
@@ -170,7 +173,7 @@ test('二零一八年第二季度前 2020年第3季度后', ({ pass, fail, is })
   is(dateB.directionality, 'after')
   is(dateB.value, '2020-10-1')
 
-  is(compare('二零一八年第二季度前', '2020年第3季度后'), true)
+  is(compare('二零一八年第二季度前', '2020年第3季度后'), -1)
 })
 
 function log(ctx) {

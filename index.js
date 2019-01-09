@@ -106,6 +106,20 @@ function isSame(dateA, dateB) {
   return moment(new Date(a.value)).isSame(new Date(b.value))
 }
 
+function compare(dateA, dateB) {
+  const a = parse(dateA)
+  const b = parse(dateB)
+
+  if (moment(new Date(a.value)).isSame(new Date(b.value)))
+    return 0
+
+  if (moment(new Date(a.value)).isBefore(new Date(b.value)))
+    return -1
+
+  if (moment(new Date(a.value)).isAfter(new Date(b.value)))
+    return 1
+}
+
 function isFunction(fn) {
  return fn && {}.toString.call(fn) === '[object Function]'
 }
@@ -115,5 +129,5 @@ module.exports = {
   isBefore,
   isAfter,
   isSame,
-  compare: isBefore,
+  compare,
 }
