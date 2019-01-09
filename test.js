@@ -176,6 +176,15 @@ test('二零一八年第二季度前 2020年第3季度后', ({ pass, fail, is })
   is(compare('二零一八年第二季度前', '2020年第3季度后'), -1)
 })
 
+test('二零一八年底 ２０１８年末', ({ pass, fail, is }) => {
+  const dateA = parse('二零一八年底')
+  const dateB = parse('２０１８年末')
+  is(dateA.value, '2018-12-31')
+  is(dateB.value, '2018-12-31')
+
+  is(compare('二零一八年底', '２０１８年末'), 0)
+})
+
 function log(ctx) {
   console.log(JSON.stringify(ctx, null, 2), '\n')
 }
