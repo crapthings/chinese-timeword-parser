@@ -1,11 +1,18 @@
 const moment = require('moment')
 
-const CJK_SYMBOLS_AND_PUNCTUATION = {
-  '〇': '0',
-}
+const NUMERIC_DICT = {
+  '０': '0',
+  '１': '1',
+  '２': '2',
+  '３': '3',
+  '４': '4',
+  '５': '5',
+  '６': '6',
+  '７': '7',
+  '８': '8',
+  '９': '9',
 
-const CJK_UNIFIED_IDEOGRAPHS = {
-  '零': '0',
+  '〇': '0',
   '一': '1',
   '二': '2',
   '三': '3',
@@ -17,23 +24,11 @@ const CJK_UNIFIED_IDEOGRAPHS = {
   '九': '9',
   '十': '10',
 
+  '零': '0',
   '两': '2',
 }
 
-const HALFWIDTH_AND_FULLWIDTH_FORMS = {
-  '０': '0',
-  '１': '1',
-  '２': '2',
-  '３': '3',
-  '４': '4',
-  '５': '5',
-  '６': '6',
-  '７': '7',
-  '８': '8',
-  '９': '9',
-}
-
-const TIMEWORD = {
+const TIMEWORD_DICT = {
   '年': 'years',
   '月': 'months',
   '日': 'days',
@@ -53,8 +48,6 @@ const TIMEWORD = {
 }
 
 module.exports = {
-  CJK_SYMBOLS_AND_PUNCTUATION,
-  CJK_UNIFIED_IDEOGRAPHS,
-  HALFWIDTH_AND_FULLWIDTH_FORMS,
-  TIMEWORD,
+  NUMERIC_DICT,
+  TIMEWORD_DICT,
 }

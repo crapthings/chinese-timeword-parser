@@ -1,10 +1,8 @@
 const moment = require('moment')
 
 const {
-  CJK_SYMBOLS_AND_PUNCTUATION,
-  CJK_UNIFIED_IDEOGRAPHS,
-  HALFWIDTH_AND_FULLWIDTH_FORMS,
-  TIMEWORD,
+  NUMERIC_DICT,
+  TIMEWORD_DICT,
 } = require('./mapping')
 
 const MATCH_PATTERN = /([头前后])?([\d]+)([年])?([的])?([第])?([到至~])?([\d]+)?([个])?(.*)?([年月周][初末底头尾]|季度|季|星期|[年月日天周])([之])?([前后内])?/
@@ -15,8 +13,8 @@ function parse(str) {
   const match = post.match(MATCH_PATTERN)
 
   let value = match[2]
-  const token = TIMEWORD[match[10]]
-  const directionality = TIMEWORD[match[1]] || TIMEWORD[match[12]]
+  const token = TIMEWORD_DICT[match[10]]
+  const directionality = TIMEWORD_DICT[match[1]] || TIMEWORD_DICT[match[12]]
 
   if (token === 'start of a year')
     value = moment(new Date(value)).startOf('year').format('YYYY-M-D')
@@ -58,14 +56,14 @@ function parse(str) {
   return result
 }
 
-function preProcess(ctx) {
-  const chars = ctx.replace(/\s/g, '').split('')
+function preProcess(str) {
+  const chars = str.replace(/\s/g, '').split('')
   const result = []
   for (const idx in chars) {
     const char = chars[idx]
     if (char == '十' || char == '百') {
-      const leftChar = CJK_UNIFIED_IDEOGRAPHS[chars[parseInt(idx) - 1]]
-      const rightChar = CJK_UNIFIED_IDEOGRAPHS[chars[parseInt(idx) + 1]]
+      const leftChar = NUMERIC_DICT[chars[parseInt(idx) - 1]]
+      const rightChar = NUMERIC_DICT[chars[parseInt(idx) + 1]]
       if (leftChar && !rightChar) result.push('0')
       if (!leftChar && rightChar) result.push('1')
       if (!leftChar && !rightChar) result.push(char)
@@ -77,12 +75,10 @@ function preProcess(ctx) {
 }
 
 function postProcess(ctx) {
-  const result = ctx
+  const result = clone(ctx)
   for (const idx in result) {
     const char = result[idx]
-    result[idx] = CJK_SYMBOLS_AND_PUNCTUATION[char]
-      || CJK_UNIFIED_IDEOGRAPHS[char]
-      || HALFWIDTH_AND_FULLWIDTH_FORMS[char]
+    result[idx] = NUMERIC_DICT[char]
       || char
   }
   return result.join('')
@@ -122,6 +118,10 @@ function compare(dateA, dateB) {
 
 function isFunction(fn) {
  return fn && {}.toString.call(fn) === '[object Function]'
+}
+
+function clone(obj) {
+  return JSON.parse(JSON.stringify(obj))
 }
 
 module.exports = {
