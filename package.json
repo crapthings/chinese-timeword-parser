@@ -1,18 +1,28 @@
 {
   "name": "@crapthings/chinese-timeword-parser",
   "version": "1.0.0",
-  "description": "",
+  "description": "Extract Chinese timewords, durations and calendar boundaries. Zero dependencies, with TypeScript declarations.",
   "main": "index.js",
   "scripts": {
-    "test": "ava --verbose"
+    "test": "node --test"
   },
-  "keywords": [],
+  "keywords": [
+    "chinese",
+    "timeword",
+    "parser",
+    "typescript",
+    "zero-dependencies"
+  ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "moment": "^2.23.0"
+  "types": "index.d.ts",
+  "engines": {
+    "node": ">=18"
   },
-  "devDependencies": {
-    "ava": "^1.0.1"
-  }
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "mapping.js",
+    "lib/"
+  ]
 }

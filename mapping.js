@@ -1,5 +1,3 @@
-const moment = require('moment')
-
 const NUMERIC_DICT = {
   '０': '0',
   '１': '1',
@@ -41,6 +39,7 @@ const TIMEWORD_DICT = {
   '季': 'quarters',
   '季度': 'quarters',
   '星期': 'weeks',
+  '年头': 'start of a year',
   '年初': 'start of a year',
   '年底': 'end of a year',
   '年末': 'end of a year',

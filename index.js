@@ -1,133 +1,75 @@
-const moment = require('moment')
-
-const {
-  NUMERIC_DICT,
-  TIMEWORD_DICT,
-} = require('./mapping')
-
-const MATCH_PATTERN = /([头前后])?([\d]+)([年])?([的])?([第])?([到至~])?([\d]+)?([个])?(.*)?([年月周][初末底头尾]|季度|季|星期|[年月日天周])([之])?([前后内])?/
-
-function parse(str) {
-  const pre = preProcess(str)
-  const post = postProcess(pre)
-  const match = post.match(MATCH_PATTERN)
-
-  let value = match[2]
-  const token = TIMEWORD_DICT[match[10]]
-  const directionality = TIMEWORD_DICT[match[1]] || TIMEWORD_DICT[match[12]]
-
-  if (token === 'start of a year')
-    value = moment(new Date(value)).startOf('year').format('YYYY-M-D')
-
-  if (token === 'end of a year')
-    value = moment(new Date(value)).endOf('year').format('YYYY-M-D')
-
-  const result = {}
-
-  if (directionality) result.directionality = directionality
-  if (token) result.token = token
-
-  if (value && match[7] && !match[3] && !match[4] && !match[5]) {
-    result.from = value
-    result.to = match[7]
-  }
-
-  if (value && !match[7]) {
-    result.value = value
-  }
-
-  if (match[2] && match[3] && match[7] && match[10] && !directionality) {
-    result.from = moment(new Date(match[2])).quarter(parseInt(match[7])).format('YYYY-M-D')
-    result.to = moment(new Date(match[2])).quarter(parseInt(match[7]) + 1).subtract(1, 'd').format('YYYY-M-D')
-    result.quarter = match[7]
-  }
-
-  if (match[2] && match[3] && match[7] && match[10] && directionality) {
-    if (directionality == 'before')
-      result.value = moment(new Date(match[2])).quarter(parseInt(match[7])).subtract(1, 'd').format('YYYY-M-D')
-    if (directionality == 'after')
-      result.value = moment(new Date(match[2])).quarter(parseInt(match[7]) + 1).format('YYYY-M-D')
-    result.year = match[2]
-    result.quarter = match[7]
-  }
-
-  // console.log(result)
-
-  return result
+const { CHARS, normalize, number } = require('./lib/numbers')
+const { TIMEWORD_DICT } = require('./mapping')
+const N = `[${CHARS}]{1,16}`
+const SOURCE = `(?<year>[${CHARS}]{1,16})年(?:的)?(?:第)?(?<quarter>${N})(?:个)?(?:季度|季)(?<qd>[前后内])?|(?<boundaryYear>${N})(?<boundary>年初|年头|年末|年底|年尾)(?<bd>[前后内])?|(?<prefix>[头前后])?(?<amount>${N})(?:[ \t]*(?:到|至|~|～|-)[ \t]*(?<end>${N}))?[ \t]*(?:个)?(?<unit>工作日|季度|星期|年|月|日|天|周|季)(?<suffix>[前后内])?`
+const ADJACENT = new RegExp(`[${CHARS}万亿萬億A-Za-z_./:：负負+＋−－-]`)
+function date(year, month, day) { return `${year}-${month}-${day}` }
+function previous(year, month) {
+  if (month === 1) return date(year - 1, 12, 31)
+  return date(year, month - 1, [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 2])
 }
-
-function preProcess(str) {
-  const chars = str.replace(/\s/g, '').split('')
-  const result = []
-  for (const idx in chars) {
-    const char = chars[idx]
-    if (char == '十' || char == '百') {
-      const leftChar = NUMERIC_DICT[chars[parseInt(idx) - 1]]
-      const rightChar = NUMERIC_DICT[chars[parseInt(idx) + 1]]
-      if (leftChar && !rightChar) result.push('0')
-      if (!leftChar && rightChar) result.push('1')
-      if (!leftChar && !rightChar) result.push(char)
-    } else {
-      result.push(char)
+function convert(g) {
+  if (g.year || g.boundaryYear) {
+    const rawYear = normalize(g.year || g.boundaryYear)
+    const year = Number(rawYear)
+    if (!/^\d{4}$/.test(rawYear) || year < 1 || year > 9999) return
+    if (g.boundary) {
+      const result = { token: TIMEWORD_DICT[g.boundary], value: date(year, g.boundary === '年初' || g.boundary === '年头' ? 1 : 12, g.boundary === '年初' || g.boundary === '年头' ? 1 : 31) }
+      if (g.bd) result.directionality = TIMEWORD_DICT[g.bd]
+      return result
     }
+    const quarter = number(g.quarter)
+    if (quarter < 1 || quarter > 4 || !Number.isInteger(quarter)) return
+    const month = (quarter - 1) * 3 + 1
+    const result = { token: 'quarters', quarter: String(quarter) }
+    if (g.qd === '前' || g.qd === '后') {
+      if ((year === 1 && quarter === 1 && g.qd === '前') || (year === 9999 && quarter === 4 && g.qd === '后')) return
+      result.directionality = TIMEWORD_DICT[g.qd]
+      result.year = String(year)
+      result.value = g.qd === '前' ? previous(year, month) : date(quarter === 4 ? year + 1 : year, quarter === 4 ? 1 : month + 3, 1)
+    } else {
+      result.from = date(year, month, 1)
+      result.to = date(year, month + 2, quarter === 1 || quarter === 4 ? 31 : 30)
+      if (g.qd) result.directionality = TIMEWORD_DICT[g.qd]
+    }
+    return result
   }
+  const amount = number(g.amount), end = g.end === undefined ? undefined : number(g.end)
+  if (!Number.isSafeInteger(amount) || (end !== undefined && (!Number.isSafeInteger(end) || end < amount))) return
+  if (g.prefix && g.suffix && TIMEWORD_DICT[g.prefix] !== TIMEWORD_DICT[g.suffix]) return
+  const result = { token: g.unit === '工作日' ? 'days' : TIMEWORD_DICT[g.unit] }
+  if (g.prefix || g.suffix) result.directionality = TIMEWORD_DICT[g.prefix || g.suffix]
+  if (end === undefined) result.value = String(amount)
+  else { result.from = String(amount); result.to = String(end) }
   return result
 }
-
-function postProcess(ctx) {
-  const result = clone(ctx)
-  for (const idx in result) {
-    const char = result[idx]
-    result[idx] = NUMERIC_DICT[char]
-      || char
+function* scan(text) {
+  if (typeof text !== 'string') return
+  const pattern = new RegExp(SOURCE, 'g')
+  for (const match of text.matchAll(pattern)) {
+    const end = match.index + match[0].length
+    if (ADJACENT.test(text[match.index - 1] || '') || ADJACENT.test(text[end] || '')) continue
+    // Do not reinterpret a fragment of an invalid calendar expression.
+    if (/[年月]/.test(text[match.index - 1] || '') || /[年月日号第]/.test(text[end] || '')) continue
+    const result = convert(match.groups)
+    if (result) yield { ...result, text: match[0], index: match.index }
   }
-  return result.join('')
 }
-
-function isBefore(dateA, dateB) {
-  const a = parse(dateA)
-  const b = parse(dateB)
-  return moment(new Date(a.value)).isBefore(new Date(b.value))
+function parseAll(text) { return Array.from(scan(text)) }
+function parse(text) {
+  const match = scan(text).next().value
+  if (!match) return undefined
+  const { text: original, index, ...result } = match
+  return result
 }
-
-function isAfter(dateA, dateB) {
-  const a = parse(dateA)
-  const b = parse(dateB)
-  return moment(new Date(a.value)).isAfter(new Date(b.value))
+function comparable(text) {
+  const result = parse(text)
+  if (!result || !/^\d+-\d+-\d+$/.test(result.value || '')) throw new TypeError('Comparison requires a timeword that resolves to a single calendar date')
+  const [year, month, day] = result.value.split('-').map(Number)
+  return year * 10000 + month * 100 + day
 }
-
-function isSame(dateA, dateB) {
-  const a = parse(dateA)
-  const b = parse(dateB)
-  return moment(new Date(a.value)).isSame(new Date(b.value))
-}
-
-function compare(dateA, dateB) {
-  const a = parse(dateA)
-  const b = parse(dateB)
-
-  if (moment(new Date(a.value)).isSame(new Date(b.value)))
-    return 0
-
-  if (moment(new Date(a.value)).isBefore(new Date(b.value)))
-    return -1
-
-  if (moment(new Date(a.value)).isAfter(new Date(b.value)))
-    return 1
-}
-
-function isFunction(fn) {
- return fn && {}.toString.call(fn) === '[object Function]'
-}
-
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj))
-}
-
-module.exports = {
-  parse,
-  isBefore,
-  isAfter,
-  isSame,
-  compare,
-}
+function compare(a, b) { return Math.sign(comparable(a) - comparable(b)) }
+function isBefore(a, b) { return compare(a, b) === -1 }
+function isAfter(a, b) { return compare(a, b) === 1 }
+function isSame(a, b) { return compare(a, b) === 0 }
+module.exports = { parse, parseAll, compare, isBefore, isAfter, isSame }
